@@ -1,0 +1,44 @@
+{
+    # Debug
+    {$DEBUG}
+		# Web Application Firewall via Coraza
+		order coraza_waf first
+}
+
+{$SERVER_NAME}
+
+log
+
+route {
+    root * /srv/app/public
+    mercure {
+        # Transport to use (default to Bolt)
+        transport_url {$MERCURE_TRANSPORT_URL:local://local}
+        # Publisher JWT key
+        publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
+        # Subscriber JWT key
+        subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
+        # Allow anonymous subscribers (double-check that it's what you want)
+        # anonymous
+        # Enable the subscription API (double-check that it's what you want)
+        # subscriptions
+        # Extra directives
+        {$MERCURE_EXTRA_DIRECTIVES}
+    }
+		coraza_waf {
+				include /etc/caddy/coraza.conf
+				include /etc/caddy/coreruleset/crs-setup.conf.example
+				include /etc/caddy/coreruleset/rules/*.conf
+				include /etc/caddy/coraza-eckinox-overwrites.conf
+				include /etc/caddy/coraza-project-overwrites.conf
+		}
+    vulcain
+    push
+    php_fastcgi unix//var/run/php/php-fpm.sock {
+			# Allow x-forwarded-* headers to pass through
+			# https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#defaults
+			trusted_proxies private_ranges
+		}
+    encode zstd gzip
+    file_server
+}

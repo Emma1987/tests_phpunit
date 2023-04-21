@@ -1,0 +1,100 @@
+name: WebApp.io un-authenticated access
+
+on:
+    deployment_status
+
+jobs:
+    provide-public-environment-link-in-pr:
+        name: Provide public environment link in PR
+        runs-on: ubuntu-20.04
+        if: always() && github.event.deployment_status.state == 'success'
+        steps:
+            - uses: jwalton/gh-find-current-pr@v1
+              id: find_pr
+            - name: Find associated pull request
+              run: echo "Your PR is ${PR}"
+              if: always() && steps.find_pr.outputs.number
+              env:
+                PR: ${{ steps.find_pr.outputs.pr }}
+            - name: Figure out the public environment link
+              if: always() && steps.find_pr.outputs.number
+              id: public_testing_link
+              run: |
+                WEBAPPIO_DEPLOYMENT_ID=`echo '${{ github.event.deployment_status.environment_url }}' | sed -E "s/^.+\/deployments\/(.+)\?.+$/\1/"`
+                PUBLIC_ENVIRONMENT_URL="https://$WEBAPPIO_DEPLOYMENT_ID.cidemo.co"
+                echo "url=$PUBLIC_ENVIRONMENT_URL" >> $GITHUB_OUTPUT
+            - name: Find Comment
+              uses: peter-evans/find-comment@v2
+              if: always() && steps.find_pr.outputs.number
+              id: find_comment
+              with:
+                issue-number: ${{ steps.find_pr.outputs.pr }}
+                comment-author: 'github-actions[bot]'
+                body-includes: Testing environment
+            - name: Create or update comment
+              uses: peter-evans/create-or-update-comment@v2
+              if: always() && steps.find_pr.outputs.number
+              with:
+                comment-id: ${{ steps.find_comment.outputs.comment-id }}
+                issue-number: ${{ steps.find_pr.outputs.pr }}
+                body: |
+                    ## Testing environment
+
+                    Your testing environment is ready and available at the following URL:
+                    ${{ steps.public_testing_link.outputs.url }}
+
+                    ---
+
+                    To manage your ephemereal environments, you may:
+                    - Log in to [WebApp.io](https://webapp.io) and manage your settings there.
+                    - Edit the `Layerfile` at the root of your project.
+                    - Edit the `webappio-deployment.yaml` in the `.github/workflows/` directory of your project.
+
+                    ---
+
+                    If your testing environment is turned off due to inactivity, you may resume it by logging in to WebApp.io and going to ${{ github.event.deployment_status.environment_url }}.
+                edit-mode: replace
+
+    indicate-that-deployment-is-in-progress:
+        name: Indicate that new deployment is in progress
+        runs-on: ubuntu-20.04
+        if: always() && github.event.deployment_status.state == 'pending'
+        steps:
+            - uses: jwalton/gh-find-current-pr@v1
+              id: find_pr
+            - name: Find associated pull request
+              run: echo "Your PR is ${PR}"
+              if: always() && steps.find_pr.outputs.number
+              env:
+                PR: ${{ steps.find_pr.outputs.pr }}
+            - name: Find Comment
+              uses: peter-evans/find-comment@v2
+              if: always() && steps.find_pr.outputs.number
+              id: find_comment
+              with:
+                issue-number: ${{ steps.find_pr.outputs.pr }}
+                comment-author: 'github-actions[bot]'
+                body-includes: Testing environment
+            - name: Create or update comment
+              uses: peter-evans/create-or-update-comment@v2
+              if: always() && steps.find_pr.outputs.number
+              with:
+                comment-id: ${{ steps.find_comment.outputs.comment-id }}
+                issue-number: ${{ steps.find_pr.outputs.pr }}
+                body: |
+                    ## Testing environment
+
+                    Your testing environment is currently being prepared.
+                    This comment will be updated with the ephemeral URL once your environment is ready.
+
+                    ---
+
+                    To manage your ephemeral environments, you may:
+                    - Log in to [WebApp.io](https://webapp.io) and manage your settings there.
+                    - Edit the `Layerfile` at the root of your project.
+                    - Edit the `webappio-deployment.yaml` in the `.github/workflows/` directory of your project.
+
+                    ---
+
+                    If your testing environment is turned off due to inactivity, you may resume it by logging in to WebApp.io and going to ${{ github.event.deployment_status.environment_url }}.
+                edit-mode: replace

@@ -1,0 +1,39 @@
+FROM vm/ubuntu:18.04
+
+# install docker-ce (from tutorial for ubuntu)
+RUN apt-get update && \
+    apt-get install ca-certificates curl gnupg lsb-release && \
+    sudo mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+    echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" |\
+      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get install docker-ce docker-ce-cli containerd.io
+
+# install docker compose
+RUN curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose
+
+# copy the root (i.e., repository root) to /root in the runner
+COPY / /root
+
+# log in to docker hub
+# See https://webapp.io/docs/advanced-workflows#logging-in-to-docker to learn how to log in to docker
+SECRET ENV DOCKER_USERNAME
+SECRET ENV DOCKER_PASSWORD
+RUN echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+
+SECRET ENV GITHUB_ACCESS_TOKEN
+RUN echo "ROUTER_CONTEXT_HOST=$EXPOSE_WEBSITE_HOST" >> .env.local
+ENV SERVER_NAME="localhost:80, *.cidemo.co:80"
+ENV APP_ENV test
+
+RUN REPEATABLE docker-compose build --parallel
+RUN docker-compose up -d
+
+# Check to generate database fixtures (if applicable)
+RUN if grep "doctrine/doctrine-fixtures-bundle" composer.json; then bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:80/login)" != "200" ]]; do sleep 1; done'; docker-compose exec -T php ./bin/console doctrine:fixtures:load --append -n; fi
+
+EXPOSE WEBSITE localhost:80
+# EXPOSE WEBSITE localhost:1080 /mailcatcher
