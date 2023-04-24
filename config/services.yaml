@@ -22,3 +22,4 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    Greg0ire\Enum\Bridge\Symfony\Translator\GetLabel: "@greg0ire_enum.symfony.translator.get_label"

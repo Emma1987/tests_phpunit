@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+	<div class="text-center w-75 mx-auto" id="octopus-fun-facts-container">
+		<div class="d-flex">
+			<a class="btn btn-outline-info mx-3" href="{{ path('octopus_add_fun_fact') }}">Add a fun fact!</a>
+		</div>
+
+		{% for funFactBatch in funFacts|batch(3) %}
+			<div class="d-flex">
+				{% for funFact in funFactBatch %}
+					<div class="card m-3 fun-fact-card">
+						<div class="card-header d-flex justify-content-between">
+							{{ funFact.friendType|enum_label('App\\Entity\\Enum\\FriendType', 'enum') }}
+							<a href="{{ path('octopus_delete_fun_fact', {id: funFact.id}) }}">
+								<i class="fa fa-trash text-danger" aria-hidden="true"></i>
+							</a>
+						</div>
+						<div class="card-body my-3">
+							{{ funFact.content }}
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		{% endfor %}
+	</div>
+{% endblock %}

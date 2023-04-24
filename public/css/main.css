@@ -1,0 +1,44 @@
+body {
+	color: #23b2c2;
+	background-color: #F7F7F7;
+}
+
+div.logo {
+	max-width: 150px;
+}
+
+div.logo img {
+	max-width: 100%;
+}
+
+div#footer {
+	color: #ace8e5;
+	padding-top: 20px;
+}
+
+.navbar_links li {
+	list-style-type: none;
+}
+
+.navbar_links a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.navbar_links a:hover {
+	color: #1d96a3;
+}
+
+.btn.btn-outline-info {
+	color: inherit;
+	border-color: #23b2c2;
+}
+
+.btn.btn-outline-info:hover {
+	color: #fff;
+	background-color: #23b2c2;
+}
+
+.fun-fact-card {
+	width: 30%;
+}
